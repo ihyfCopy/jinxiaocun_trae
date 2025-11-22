@@ -79,6 +79,7 @@ class CustomerOut(CustomerBase):
 class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
+    unit: str | None = None
 
 
 class OrderCreate(BaseModel):
@@ -95,6 +96,7 @@ class OrderItemOut(BaseModel):
     product_name: str
     unit_price: float
     quantity: int
+    unit: str | None = None
     subtotal: float
 
     class Config:
@@ -114,3 +116,23 @@ class OrderOut(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ProductPage(BaseModel):
+    items: List[ProductOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class CustomerPage(BaseModel):
+    items: List[CustomerOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class OrderPage(BaseModel):
+    items: List[OrderOut]
+    total: int
+    page: int
+    page_size: int

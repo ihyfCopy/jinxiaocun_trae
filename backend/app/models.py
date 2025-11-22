@@ -57,8 +57,8 @@ class OrderItem(Base):
     product_name = Column(String(200), nullable=False)
     unit_price = Column(Float, nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
+    unit = Column(String(10), nullable=False, default="件")
     subtotal = Column(Float, nullable=False, default=0.0)
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="items")
-

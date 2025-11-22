@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
 from ..models import Product
-from ..schemas import ProductCreate, ProductUpdate, ProductOut
+from ..schemas import ProductCreate, ProductUpdate, ProductOut, ProductPage
 from ..auth import get_current_user
 
 
@@ -52,4 +52,13 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return {"message": "已删除"}
-
+@router.get("/page", response_model=ProductPage)
+def list_products_paged(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Product).order_by(Product.id.desc())
+    total = q.count()
+    items = q.offset((page - 1) * page_size).limit(page_size).all()
+    return {"items": items, "total": total, "page": page, "page_size": page_size}

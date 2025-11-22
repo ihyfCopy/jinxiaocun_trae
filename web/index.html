@@ -3,34 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>进销存系统</title>
+    <title>简易进销存</title>
     <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Microsoft YaHei', sans-serif; margin: 0; background: #f5f7fa; }
-      header { background: #1677ff; color: #fff; padding: 12px 20px; }
-      .container { padding: 16px; max-width: 1100px; margin: 0 auto; }
-      .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-      input, select, button { padding: 8px; border-radius: 6px; border: 1px solid #d1d5db; }
-      button { background: #1677ff; color: #fff; border: none; cursor: pointer; }
-      button.secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+      :root { --primary:#2b6cff; --primary-600:#1f57d6; --bg:#f3f6fb; --text:#1f2937; --muted:#6b7280; --card:#ffffff; --border:#e5e7eb; }
+      * { box-sizing: border-box; }
+      html, body, #root { height: 100%; }
+      body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Microsoft YaHei', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      .btn { padding: 10px 16px; border-radius: 10px; border: none; cursor: pointer; background: var(--primary); color: #fff; font-weight: 600; }
+      .btn[disabled] { opacity: .6; cursor: not-allowed; }
+      .btn.secondary { background: #eef2ff; color: var(--primary); border: 1px solid #dbeafe; }
+      .input, .select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 8px 20px rgba(17,24,39,.06); }
+      .center { display: flex; align-items: center; justify-content: center; height: 100%; }
+      .login-title { text-align: center; margin-bottom: 24px; }
+      .login-icon { width: 72px; height: 72px; border-radius: 999px; background: #eef2ff; color: var(--primary); display: flex; align-items:center; justify-content:center; font-size: 28px; margin: 0 auto 12px; }
+      .login-sub { color: var(--muted); }
+      .login-card { width: 380px; margin: 20px auto; }
+      .form-row { display: grid; gap: 12px; }
+      .layout { display: grid; grid-template-columns: 240px 1fr; height: 100%; }
+      .sidebar { background: #ffffff; border-right: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; margin-bottom: 16px; }
+      .nav { display: grid; gap: 6px; }
+      .nav-btn { display:flex; align-items:center; gap:8px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor:pointer; }
+      .nav-btn.active { background: var(--primary); color:#fff; border-color: var(--primary); }
+      .page { padding: 18px; overflow:auto; }
+      .grid { display: grid; gap: 12px; }
+      .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .metric { padding: 14px; border-radius: 14px; border: 1px solid var(--border); background: #fff; }
+      .muted { color: var(--muted); }
       table { width: 100%; border-collapse: collapse; }
-      th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
-      .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-      .tabs button { background: #fff; color: #333; border: 1px solid #ddd; }
-      .tabs button.active { background: #1677ff; color: #fff; }
-      .empty { color: #999; padding: 24px; text-align: center; }
-      .print-area { background: #fff; padding: 16px; }
+      th, td { border-bottom: 1px solid var(--border); padding: 10px; text-align: left; }
+      .toolbar { display:flex; gap: 10px; align-items:center; }
+      .modal-mask { position:fixed; inset:0; background: rgba(0,0,0,.25); display:flex; align-items:center; justify-content:center; }
+      .modal { width: 520px; background:#fff; border-radius: 16px; padding: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+      .steps { display:grid; grid-template-columns: 1fr 1fr auto; gap: 12px; }
+      .step { border:1px solid var(--border); border-radius: 16px; padding: 16px; background:#fff; }
+      .cart { border:1px solid var(--border); border-radius: 16px; padding: 16px; background:#fff; width: 50%; min-width: 360px; }
+      .row { display:flex; gap: 10px; align-items:center; }
+      .spaced { display:flex; justify-content: space-between; align-items:center; }
+      .avatar { width: 36px; height: 36px; border-radius: 999px; background:#eef2ff; color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; }
+      .sidebar-bottom { margin-top:auto; display:flex; align-items:center; gap:10px; }
     </style>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
-    <header>
-      <h2>进销存系统</h2>
-    </header>
-    <div id="root" class="container"></div>
-
+    <div id="root"></div>
     <script type="text/babel">
       const API = 'http://127.0.0.1:8000';
       const fetchJSON = async (url, options={}) => {
@@ -39,6 +59,51 @@
         const res = await fetch(url, { ...options, headers: { ...headers, ...(options.headers||{}) } });
         if (!res.ok) throw new Error(await res.text());
         return res.json();
+      };
+
+      const OrderPreviewPage = ({ orderId, goOrders, goCreate }) => {
+        const [order, setOrder] = React.useState(null);
+        React.useEffect(()=>{ (async()=> { if(orderId){ setOrder(await fetchJSON(`${API}/orders/${orderId}`)); } })(); }, [orderId]);
+        const printOrder = () => {
+          if (!order) return;
+          const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><title>订单${order.id}</title><style>body{font-family:Arial,'Microsoft YaHei';padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}</style></head><body><h2>订单 #${order.id}</h2><div>客户：${order.customer_name||'—'} 电话：${order.customer_phone||'—'} 地址：${order.customer_address||'—'}</div><table><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead><tbody>${order.items.map(it=>`<tr><td>${it.product_name}</td><td>¥${it.unit_price}</td><td>${it.quantity}</td><td>${it.unit||'件'}</td><td>¥${it.subtotal}</td></tr>`).join('')}</tbody></table><div style=\"margin-top:10px\">总计：<b>¥${order.total_amount}</b></div></body></html>`;
+          const win = window.open('', 'print');
+          win.document.write(html);
+          win.document.close();
+          win.focus();
+          win.print();
+          win.close();
+        };
+        return (
+          <div className="grid">
+            <div className="spaced">
+              <div style={{fontWeight:700}}>订单预览 #{orderId}</div>
+              <div className="row">
+                <button className="btn secondary" onClick={goCreate}>继续开单</button>
+                <button className="btn secondary" onClick={goOrders}>返回订单列表</button>
+              </div>
+            </div>
+            <div className="card">
+              {!order ? <div className="muted">加载中...</div> : (
+                <div>
+                  <div>客户：{order.customer_name||'—'} 电话：{order.customer_phone||'—'} 地址：{order.customer_address||'—'}</div>
+                  <table style={{marginTop:10}}>
+                    <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead>
+                    <tbody>
+                      {order.items.map(it=> (
+                        <tr key={it.id}><td>{it.product_name}</td><td>¥{it.unit_price}</td><td>{it.quantity}</td><td>{it.unit || '件'}</td><td>¥{it.subtotal}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="spaced" style={{marginTop:10}}>
+                    <div>总计：<b>¥{order.total_amount}</b></div>
+                    <button className="btn" onClick={printOrder}>打印整个订单</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
       };
 
       const Login = ({ onLogin }) => {
@@ -53,60 +118,175 @@
           const data = await res.json(); localStorage.setItem('token', data.access_token); onLogin();
         };
         return (
-          <div className="card">
-            <h3>用户登录</h3>
-            {error && <div style={{color:'red'}}>{error}</div>}
-            <form onSubmit={submit} className="row">
-              <input placeholder="用户名" value={username} onChange={e=>setUsername(e.target.value)} />
-              <input type="password" placeholder="密码" value={password} onChange={e=>setPassword(e.target.value)} />
-              <button type="submit">登录</button>
-            </form>
+          <div className="center">
+            <div style={{maxWidth:720}}>
+              <div className="login-title">
+                <div className="login-icon">⬛</div>
+                <div style={{fontSize:28, fontWeight:800}}>简易进销存</div>
+                <div className="login-sub">库存管理系统</div>
+              </div>
+              <div className="card login-card">
+                {error && <div style={{color:'red', marginBottom:8}}>{error}</div>}
+                <form onSubmit={submit} className="form-row">
+                  <div>
+                    <div className="muted" style={{marginBottom:6}}>用户名</div>
+                    <input className="input" placeholder="admin" value={username} onChange={e=>setUsername(e.target.value)} />
+                  </div>
+                  <div>
+                    <div className="muted" style={{marginBottom:6}}>密码</div>
+                    <input className="input" type="password" placeholder="******" value={password} onChange={e=>setPassword(e.target.value)} />
+                  </div>
+                  <button className="btn" type="submit">登录</button>
+                </form>
+                <div className="muted" style={{textAlign:'center', marginTop:10}}>演示模式：输入任意用户名/密码即可登录</div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const Sidebar = ({ tab, setTab, logout }) => (
+        <div className="sidebar">
+          <div className="brand"><div className="login-icon" style={{width:32,height:32,fontSize:16}}>⬛</div>简易进销存</div>
+          <div className="nav">
+            {[
+              {key:'dashboard', label:'仪表盘', icon:'📊'},
+              {key:'products', label:'商品管理', icon:'🧱'},
+              {key:'customers', label:'客户管理', icon:'👥'},
+              {key:'orders', label:'订单列表', icon:'🧾'},
+              {key:'create', label:'开单', icon:'➕'},
+            ].map(i=> (
+              <button key={i.key} className={`nav-btn ${tab===i.key?'active':''}`} onClick={()=>setTab(i.key)}>{i.icon} {i.label}</button>
+            ))}
+          </div>
+          <div className="sidebar-bottom">
+            <div className="avatar">A</div>
+            <div style={{flex:1}}>
+              <div>admin</div>
+              <a href="#" className="muted" onClick={logout}>退出登录</a>
+            </div>
+          </div>
+        </div>
+      );
+
+      const Dashboard = () => {
+        const [stats, setStats] = React.useState({ sales:0, orders:0, products:0, customers:0 });
+        React.useEffect(()=>{ (async()=>{
+          const [ps, cs, os] = await Promise.all([
+            fetchJSON(`${API}/products/`),
+            fetchJSON(`${API}/customers/`),
+            fetchJSON(`${API}/orders/`)
+          ]);
+          setStats({ sales: os.reduce((s,o)=>s+o.total_amount,0), orders: os.length, products: ps.length, customers: cs.length });
+        })(); }, []);
+        return (
+          <div className="grid">
+            <div className="metrics">
+              <div className="metric"><div className="muted">总销售额</div><div style={{fontSize:22,fontWeight:800}}>¥{stats.sales.toFixed(2)}</div></div>
+              <div className="metric"><div className="muted">订单总数</div><div style={{fontSize:22,fontWeight:800}}>{stats.orders}</div></div>
+              <div className="metric"><div className="muted">商品总数</div><div style={{fontSize:22,fontWeight:800}}>{stats.products}</div></div>
+              <div className="metric"><div className="muted">客户总数</div><div style={{fontSize:22,fontWeight:800}}>{stats.customers}</div></div>
+            </div>
+            <div className="grid" style={{gridTemplateColumns:'2fr 1fr'}}>
+              <div className="card"><div style={{fontWeight:700, marginBottom:8}}>最近订单</div><div className="muted">暂无订单</div></div>
+              <div className="card"><div style={{fontWeight:700, marginBottom:8}}>库存预警</div><div className="muted">所有商品库存充足</div></div>
+            </div>
           </div>
         );
       };
 
       const Products = () => {
         const [items, setItems] = React.useState([]);
+        const [page, setPage] = React.useState(1);
+        const [pageSize, setPageSize] = React.useState(10);
+        const [total, setTotal] = React.useState(0);
+        const [visible, setVisible] = React.useState(false);
         const [form, setForm] = React.useState({ name:'', sku:'', price:0, stock:0, description:'' });
         const [editing, setEditing] = React.useState(null);
-        const load = async () => setItems(await fetchJSON(`${API}/products/`));
-        React.useEffect(()=>{ load(); },[]);
-        const submit = async () => {
-          if (editing) {
-            await fetchJSON(`${API}/products/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
-          } else {
-            await fetchJSON(`${API}/products/`, { method: 'POST', body: JSON.stringify(form) });
+        const load = async (p=page, ps=pageSize) => {
+          try {
+            const data = await fetchJSON(`${API}/products/page?page=${p}&page_size=${ps}`);
+            setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
+          } catch (e) {
+            const list = await fetchJSON(`${API}/products/?page=${p}&page_size=${ps}`);
+            const totalGuess = await fetchJSON(`${API}/products/`).then(r=>r.length).catch(()=>list.length);
+            setItems(list); setTotal(totalGuess); setPage(p); setPageSize(ps);
           }
-          setForm({ name:'', sku:'', price:0, stock:0, description:'' }); setEditing(null); await load();
         };
-        const del = async (id) => { await fetchJSON(`${API}/products/${id}`, { method:'DELETE' }); await load(); };
+        React.useEffect(()=>{ load(1, pageSize); },[]);
+        const submit = async () => {
+          if (editing) await fetchJSON(`${API}/products/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
+          else await fetchJSON(`${API}/products/`, { method: 'POST', body: JSON.stringify(form) });
+          setForm({ name:'', sku:'', price:0, stock:0, description:'' }); setEditing(null); setVisible(false); await load(page, pageSize);
+        };
+        const del = async (id) => { await fetchJSON(`${API}/products/${id}`, { method:'DELETE' }); await load(page, pageSize); };
         return (
-          <div className="card">
-            <h3>商品管理</h3>
-            <div className="row">
-              <input placeholder="名称" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
-              <input placeholder="SKU" value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} />
-              <input type="number" placeholder="价格" value={form.price} onChange={e=>setForm({...form, price:parseFloat(e.target.value||0)})} />
-              <input type="number" placeholder="库存" value={form.stock} onChange={e=>setForm({...form, stock:parseInt(e.target.value||0)})} />
-              <input placeholder="描述" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-              <button onClick={submit}>{editing? '保存修改':'新增商品'}</button>
-              {editing && <button className="secondary" onClick={()=>{setEditing(null); setForm({ name:'', sku:'', price:0, stock:0, description:'' });}}>取消编辑</button>}
+          <div className="grid">
+            <div className="spaced">
+              <div className="toolbar" style={{width:'60%'}}>
+                <input className="input" placeholder="搜索商品..." />
+              </div>
+              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', sku:'', price:0, stock:0, description:'' }); setVisible(true); }}>新增商品</button>
             </div>
-            {items.length===0 ? <div className="empty">暂无商品</div> : (
-              <table>
-                <thead><tr><th>ID</th><th>名称</th><th>SKU</th><th>价格</th><th>库存</th><th>操作</th></tr></thead>
-                <tbody>
-                  {items.map(p=> (
-                    <tr key={p.id}>
-                      <td>{p.id}</td><td>{p.name}</td><td>{p.sku}</td><td>{p.price}</td><td>{p.stock}</td>
-                      <td>
-                        <button className="secondary" onClick={()=>{setEditing(p); setForm({ name:p.name, sku:p.sku||'', price:p.price, stock:p.stock, description:p.description||'' });}}>编辑</button>
-                        <button onClick={()=>del(p.id)} style={{marginLeft:8}}>删除</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="card">
+              {items.length===0 ? <div className="muted" style={{padding:20}}>暂无商品</div> : (
+                <table>
+                  <thead><tr><th>商品名称</th><th>SKU</th><th>库存</th><th>单价</th><th>操作</th></tr></thead>
+                  <tbody>
+                    {items.map(p=> (
+                      <tr key={p.id}>
+                        <td>{p.name}</td><td>{p.sku}</td><td>{p.stock}</td><td>¥{p.price}</td>
+                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(p); setForm({ name:p.name, sku:p.sku||'', price:p.price, stock:p.stock, description:p.description||'' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(p.id)}>删除</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <div className="spaced" style={{marginTop:10}}>
+                <div className="row">
+                  <span className="muted">每页</span>
+                  <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="muted">共 {total} 条</span>
+                </div>
+                <div className="row">
+                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
+                  <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
+                  <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+                </div>
+              </div>
+            </div>
+            {visible && (
+              <div className="modal-mask">
+                <div className="modal">
+                  <div style={{fontWeight:700, marginBottom:10}}>{editing? '编辑商品':'新增商品'}</div>
+                  <div className="form-row">
+                    <input className="input" placeholder="商品名称" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
+                    <input className="input" placeholder="分类/备注" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+                    <div className="row">
+                      <div style={{flex:1}}>
+                        <div className="muted" style={{marginBottom:6}}>SKU</div>
+                        <input className="input" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} />
+                      </div>
+                      <div style={{width:160}}>
+                        <div className="muted" style={{marginBottom:6}}>数量</div>
+                        <input className="input" type="number" placeholder="数量" value={form.stock} onChange={e=>setForm({...form, stock:parseInt(e.target.value||0)})} />
+                      </div>
+                      <div style={{width:160}}>
+                        <div className="muted" style={{marginBottom:6}}>单价(¥)</div>
+                        <input className="input" type="number" placeholder="单价" value={form.price} onChange={e=>setForm({...form, price:parseFloat(e.target.value||0)})} />
+                      </div>
+                    </div>
+                    <div className="spaced">
+                      <button className="btn secondary" onClick={()=>{ setVisible(false); setEditing(null); }}>取消</button>
+                      <button className="btn" onClick={submit}>保存</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         );
@@ -114,158 +294,304 @@
 
       const Customers = () => {
         const [items, setItems] = React.useState([]);
+        const [page, setPage] = React.useState(1);
+        const [pageSize, setPageSize] = React.useState(10);
+        const [total, setTotal] = React.useState(0);
+        const [visible, setVisible] = React.useState(false);
         const [form, setForm] = React.useState({ name:'', phone:'', address:'' });
         const [editing, setEditing] = React.useState(null);
-        const load = async () => setItems(await fetchJSON(`${API}/customers/`));
-        React.useEffect(()=>{ load(); },[]);
-        const submit = async () => {
-          if (editing) {
-            await fetchJSON(`${API}/customers/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
-          } else {
-            await fetchJSON(`${API}/customers/`, { method: 'POST', body: JSON.stringify(form) });
+        const load = async (p=page, ps=pageSize) => {
+          try {
+            const data = await fetchJSON(`${API}/customers/page?page=${p}&page_size=${ps}`);
+            setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
+          } catch (e) {
+            const list = await fetchJSON(`${API}/customers/?page=${p}&page_size=${ps}`);
+            const totalGuess = await fetchJSON(`${API}/customers/`).then(r=>r.length).catch(()=>list.length);
+            setItems(list); setTotal(totalGuess); setPage(p); setPageSize(ps);
           }
-          setForm({ name:'', phone:'', address:'' }); setEditing(null); await load();
         };
-        const del = async (id) => { await fetchJSON(`${API}/customers/${id}`, { method:'DELETE' }); await load(); };
+        React.useEffect(()=>{ load(1, pageSize); },[]);
+        const submit = async () => {
+          if (editing) await fetchJSON(`${API}/customers/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
+          else await fetchJSON(`${API}/customers/`, { method: 'POST', body: JSON.stringify(form) });
+          setForm({ name:'', phone:'', address:'' }); setEditing(null); setVisible(false); await load(page, pageSize);
+        };
+        const del = async (id) => { await fetchJSON(`${API}/customers/${id}`, { method:'DELETE' }); await load(page, pageSize); };
         return (
-          <div className="card">
-            <h3>客户管理</h3>
-            <div className="row">
-              <input placeholder="姓名" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
-              <input placeholder="电话" value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
-              <input placeholder="地址" value={form.address} onChange={e=>setForm({...form, address:e.target.value})} />
-              <button onClick={submit}>{editing? '保存修改':'新增客户'}</button>
-              {editing && <button className="secondary" onClick={()=>{setEditing(null); setForm({ name:'', phone:'', address:'' });}}>取消编辑</button>}
+          <div className="grid">
+            <div className="spaced">
+              <div className="toolbar" style={{width:'60%'}}>
+                <input className="input" placeholder="搜索客户..." />
+              </div>
+              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', phone:'', address:'' }); setVisible(true); }}>新增客户</button>
             </div>
-            {items.length===0 ? <div className="empty">暂无客户</div> : (
-              <table>
-                <thead><tr><th>ID</th><th>姓名</th><th>电话</th><th>地址</th><th>操作</th></tr></thead>
-                <tbody>
-                  {items.map(c=> (
-                    <tr key={c.id}>
-                      <td>{c.id}</td><td>{c.name}</td><td>{c.phone}</td><td>{c.address}</td>
-                      <td>
-                        <button className="secondary" onClick={()=>{setEditing(c); setForm({ name:c.name, phone:c.phone||'', address:c.address||'' });}}>编辑</button>
-                        <button onClick={()=>del(c.id)} style={{marginLeft:8}}>删除</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="card">
+              {items.length===0 ? <div className="muted" style={{padding:20}}>暂无客户</div> : (
+                <table>
+                  <thead><tr><th>客户姓名</th><th>电话</th><th>地址</th><th>操作</th></tr></thead>
+                  <tbody>
+                    {items.map(c=> (
+                      <tr key={c.id}>
+                        <td>{c.name}</td><td>{c.phone}</td><td>{c.address}</td>
+                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(c); setForm({ name:c.name, phone:c.phone||'', address:c.address||'' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(c.id)}>删除</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <div className="spaced" style={{marginTop:10}}>
+                <div className="row">
+                  <span className="muted">每页</span>
+                  <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="muted">共 {total} 条</span>
+                </div>
+                <div className="row">
+                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
+                  <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
+                  <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+                </div>
+              </div>
+            </div>
+            {visible && (
+              <div className="modal-mask">
+                <div className="modal">
+                  <div style={{fontWeight:700, marginBottom:10}}>{editing? '编辑客户':'新增客户'}</div>
+                  <div className="form-row">
+                    <input className="input" placeholder="客户姓名" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
+                    <input className="input" placeholder="联系电话" value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
+                    <input className="input" placeholder="地址" value={form.address} onChange={e=>setForm({...form, address:e.target.value})} />
+                    <div className="spaced">
+                      <button className="btn secondary" onClick={()=>{ setVisible(false); setEditing(null); }}>取消</button>
+                      <button className="btn" onClick={submit}>确认添加</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         );
       };
 
-      const Orders = () => {
-        const [products, setProducts] = React.useState([]);
-        const [customers, setCustomers] = React.useState([]);
-        const [selectedItems, setSelectedItems] = React.useState([]);
-        const [selectedCustomerId, setSelectedCustomerId] = React.useState('');
-        const [customCustomer, setCustomCustomer] = React.useState({ name:'', phone:'', address:'' });
-        const [createdOrder, setCreatedOrder] = React.useState(null);
-        React.useEffect(()=> { (async()=>{ setProducts(await fetchJSON(`${API}/products/`)); setCustomers(await fetchJSON(`${API}/customers/`)); })(); }, []);
-        const addItem = (p) => {
-          const ex = selectedItems.find(i=>i.product_id===p.id);
-          if (ex) setSelectedItems(selectedItems.map(i=> i.product_id===p.id ? { ...i, quantity: i.quantity+1 } : i));
-          else setSelectedItems([...selectedItems, { product_id: p.id, name:p.name, price:p.price, quantity:1 }]);
+      const OrdersList = () => {
+        const [items, setItems] = React.useState([]);
+        const [page, setPage] = React.useState(1);
+        const [pageSize, setPageSize] = React.useState(10);
+        const [total, setTotal] = React.useState(0);
+        const [preview, setPreview] = React.useState(null);
+        const load = async (p=page, ps=pageSize) => {
+          try {
+            const data = await fetchJSON(`${API}/orders/page?page=${p}&page_size=${ps}`);
+            setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
+          } catch (e) {
+            const list = await fetchJSON(`${API}/orders/?page=${p}&page_size=${ps}`);
+            const totalGuess = await fetchJSON(`${API}/orders/`).then(r=>r.length).catch(()=>list.length);
+            setItems(list); setTotal(totalGuess); setPage(p); setPageSize(ps);
+          }
         };
-        const changeQty = (pid, qty) => setSelectedItems(selectedItems.map(i=> i.product_id===pid ? { ...i, quantity: Math.max(1, qty) } : i));
-        const total = selectedItems.reduce((s,i)=> s + i.price * i.quantity, 0);
-        const submit = async () => {
-          const payload = {
-            customer_id: selectedCustomerId ? Number(selectedCustomerId) : null,
-            customer_name: customCustomer.name || undefined,
-            customer_phone: customCustomer.phone || undefined,
-            customer_address: customCustomer.address || undefined,
-            items: selectedItems.map(i=> ({ product_id: i.product_id, quantity: i.quantity }))
-          };
-          const order = await fetchJSON(`${API}/orders/`, { method: 'POST', body: JSON.stringify(payload) });
-          setCreatedOrder(order);
+        React.useEffect(()=>{ load(1, pageSize); },[]);
+        const openPreview = async (id) => { setPreview(await fetchJSON(`${API}/orders/${id}`)); };
+        const printOrder = async (id) => {
+          const data = preview && preview.id===id ? preview : await fetchJSON(`${API}/orders/${id}`);
+          const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><title>订单${data.id}</title><style>body{font-family:Arial,'Microsoft YaHei';padding:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}</style></head><body><h2>订单 #${data.id}</h2><div>客户：${data.customer_name||'—'} 电话：${data.customer_phone||'—'} 地址：${data.customer_address||'—'}</div><table><thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead><tbody>${data.items.map(it=>`<tr><td>${it.product_name}</td><td>¥${it.unit_price}</td><td>${it.quantity}</td><td>${it.unit||'件'}</td><td>¥${it.subtotal}</td></tr>`).join('')}</tbody></table><div style=\"margin-top:10px\">总计：<b>¥${data.total_amount}</b></div></body></html>`;
+          const win = window.open('', 'print');
+          win.document.write(html);
+          win.document.close();
+          win.focus();
+          win.print();
+          win.close();
         };
-        const printOrder = () => { window.print(); };
         return (
           <div className="card">
-            <h3>订单管理</h3>
-            <div className="row">
-              <select value={selectedCustomerId} onChange={e=>setSelectedCustomerId(e.target.value)}>
-                <option value="">选择客户（可选）</option>
-                {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <input placeholder="自定义客户姓名" value={customCustomer.name} onChange={e=>setCustomCustomer({...customCustomer, name:e.target.value})} />
-              <input placeholder="电话" value={customCustomer.phone} onChange={e=>setCustomCustomer({...customCustomer, phone:e.target.value})} />
-              <input placeholder="地址" value={customCustomer.address} onChange={e=>setCustomCustomer({...customCustomer, address:e.target.value})} />
+            <div style={{fontWeight:700, marginBottom:10}}>订单列表</div>
+            {items.length===0 ? <div className="muted" style={{padding:20}}>暂无订单</div> : (
+              <table>
+                <thead><tr><th>订单号</th><th>客户</th><th>日期</th><th>金额</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody>
+                  {items.map(o=> (
+                    <tr key={o.id}>
+                      <td>{o.id}</td>
+                      <td>{o.customer_name||'—'}</td>
+                      <td>{new Date(o.created_at).toLocaleString()}</td>
+                      <td>¥{o.total_amount}</td>
+                      <td>—</td>
+                      <td className="row"><button className="btn" onClick={()=>openPreview(o.id)}>预览</button><button className="btn" onClick={()=>printOrder(o.id)}>打印</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div className="spaced" style={{marginTop:10}}>
+              <div className="row">
+                <span className="muted">每页</span>
+                <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span className="muted">共 {total} 条</span>
+              </div>
+              <div className="row">
+                <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
+                <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
+                <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+              </div>
             </div>
-            <div className="row" style={{marginTop:12}}>
-              {products.map(p=> (
-                <button key={p.id} className="secondary" onClick={()=>addItem(p)}>{p.name} ¥{p.price}</button>
-              ))}
+            {preview && (
+              <div className="modal-mask" onClick={()=>setPreview(null)}>
+                <div className="modal" onClick={e=>e.stopPropagation()}>
+                  <div className="spaced"><div style={{fontWeight:700}}>订单预览 #{preview.id}</div><button className="btn secondary" onClick={()=>setPreview(null)}>关闭</button></div>
+                  <div style={{marginTop:10}}>客户：{preview.customer_name||'—'} 电话：{preview.customer_phone||'—'} 地址：{preview.customer_address||'—'}</div>
+                  <table style={{marginTop:10}}>
+                    <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead>
+                    <tbody>
+                      {preview.items.map(it=> (
+                        <tr key={it.id}><td>{it.product_name}</td><td>¥{it.unit_price}</td><td>{it.quantity}</td><td>{it.unit||'件'}</td><td>¥{it.subtotal}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="spaced" style={{marginTop:10}}>
+                    <div>总计：<b>¥{preview.total_amount}</b></div>
+                    <button className="btn" onClick={()=>printOrder(preview.id)}>打印订单</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const CreateOrder = ({ onOrderCreated }) => {
+        const [products, setProducts] = React.useState([]);
+        const [customers, setCustomers] = React.useState([]);
+        const [mode, setMode] = React.useState('existing');
+        const [selectedCustomerId, setSelectedCustomerId] = React.useState('');
+        const [customCustomer, setCustomCustomer] = React.useState({ name:'', phone:'', address:'' });
+        const [selProductId, setSelProductId] = React.useState('');
+        const [quantity, setQuantity] = React.useState(1);
+        const [selUnit, setSelUnit] = React.useState('件');
+        const [cart, setCart] = React.useState([]);
+        React.useEffect(()=> { (async()=>{ setProducts(await fetchJSON(`${API}/products/`)); setCustomers(await fetchJSON(`${API}/customers/`)); })(); }, []);
+        const add = () => {
+          if(!selProductId) return;
+          const p = products.find(x=> x.id === Number(selProductId));
+          const ex = cart.find(i=> i.product_id === p.id);
+          if (ex) setCart(cart.map(i=> i.product_id===p.id ? { ...i, quantity: i.quantity + quantity } : i));
+          else setCart([...cart, { product_id: p.id, name: p.name, price: p.price, quantity, unit: selUnit }]);
+          setSelProductId(''); setQuantity(1); setSelUnit('件');
+        };
+        const changeQty = (pid, q) => setCart(cart.map(i=> i.product_id===pid ? { ...i, quantity: Math.max(1, q) } : i));
+        const total = cart.reduce((s,i)=> s + i.price * i.quantity, 0);
+        const submit = async () => {
+          const payload = {
+            customer_id: mode==='existing' && selectedCustomerId ? Number(selectedCustomerId) : null,
+            customer_name: mode!=='existing' ? customCustomer.name || undefined : undefined,
+            customer_phone: mode!=='existing' ? customCustomer.phone || undefined : undefined,
+            customer_address: mode!=='existing' ? customCustomer.address || undefined : undefined,
+            items: cart.map(i=> ({ product_id: i.product_id, quantity: i.quantity }))
+          };
+          const order = await fetchJSON(`${API}/orders/`, { method: 'POST', body: JSON.stringify(payload) });
+          if (onOrderCreated) onOrderCreated(order.id); else alert(`下单成功，订单号：${order.id}`);
+          setCart([]);
+        };
+        return (
+          <div className="row">
+            <div className="grid" style={{flex:'1 1 50%'}}>
+              <div className="step">
+                <div style={{fontWeight:700, marginBottom:10}}>1 客户信息</div>
+                <div className="row" style={{marginBottom:10}}>
+                  <label className="row"><input type="radio" checked={mode==='existing'} onChange={()=>setMode('existing')} /> 选择已有客户</label>
+                  <label className="row"><input type="radio" checked={mode!=='existing'} onChange={()=>setMode('temp')} /> 临时/散客</label>
+                </div>
+                {mode==='existing' ? (
+                  <select className="select" value={selectedCustomerId} onChange={e=>setSelectedCustomerId(e.target.value)}>
+                    <option value="">-- 请选择客户 --</option>
+                    {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                ) : (
+                  <div className="grid" style={{gridTemplateColumns:'1fr 1fr'}}>
+                    <input className="input" placeholder="客户姓名" value={customCustomer.name} onChange={e=>setCustomCustomer({...customCustomer, name:e.target.value})} />
+                    <input className="input" placeholder="联系电话" value={customCustomer.phone} onChange={e=>setCustomCustomer({...customCustomer, phone:e.target.value})} />
+                    <input className="input" style={{gridColumn:'1/3'}} placeholder="地址" value={customCustomer.address} onChange={e=>setCustomCustomer({...customCustomer, address:e.target.value})} />
+                  </div>
+                )}
+              </div>
+              <div className="step">
+                <div style={{fontWeight:700, marginBottom:10}}>2 添加商品</div>
+                <div className="row" style={{alignItems:'flex-end'}}>
+                  <div style={{flex:1}}>
+                    <div className="muted" style={{marginBottom:6}}>选择商品</div>
+                    <select className="select" value={selProductId} onChange={e=>setSelProductId(e.target.value)}>
+                      <option value="">-- 请选择商品 --</option>
+                      {products.map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div style={{width:120}}>
+                    <div className="muted" style={{marginBottom:6}}>单价(¥)</div>
+                    <input className="input" disabled value={(products.find(x=>x.id===Number(selProductId))?.price ?? '')} />
+                  </div>
+                  <div style={{width:100}}>
+                    <div className="muted" style={{marginBottom:6}}>数量</div>
+                    <input className="input" type="number" value={quantity} onChange={e=>setQuantity(parseInt(e.target.value||1))} />
+                  </div>
+                  <div style={{width:120}}>
+                    <div className="muted" style={{marginBottom:6}}>单位</div>
+                    <select className="select" value={selUnit} onChange={e=>setSelUnit(e.target.value)}>
+                      <option value="件">件</option>
+                      <option value="斤">斤</option>
+                    </select>
+                  </div>
+                  <button className="btn" onClick={add}>添加</button>
+                </div>
+              </div>
             </div>
-            <div className="card" style={{marginTop:12}}>
-              <h4>已选商品</h4>
-              {selectedItems.length===0 ? <div className="empty">暂无已选商品</div> : (
+            <div className="cart">
+              <div style={{fontWeight:700, marginBottom:10}}>购物车 / 订单详情</div>
+              {cart.length===0 ? <div className="muted" style={{padding:20}}>暂无商品</div> : (
                 <table>
-                  <thead><tr><th>名称</th><th>单价</th><th>数量</th><th>小计</th></tr></thead>
+                  <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead>
                   <tbody>
-                    {selectedItems.map(i=> (
+                    {cart.map(i=> (
                       <tr key={i.product_id}>
                         <td>{i.name}</td><td>¥{i.price}</td>
-                        <td><input type="number" value={i.quantity} onChange={e=>changeQty(i.product_id, parseInt(e.target.value||1))} /></td>
+                        <td><input className="input" type="number" value={i.quantity} onChange={e=>changeQty(i.product_id, parseInt(e.target.value||1))} /></td>
+                        <td>{i.unit||'件'}</td>
                         <td>¥{(i.price*i.quantity).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
-              <div className="row" style={{justifyContent:'space-between', marginTop:8}}>
+              <div className="spaced" style={{marginTop:10}}>
                 <div>合计：<b>¥{total.toFixed(2)}</b></div>
-                <div>
-                  <button onClick={submit} disabled={selectedItems.length===0}>确认下单</button>
-                </div>
+                <button className="btn" onClick={submit} disabled={cart.length===0}>确认下单</button>
               </div>
             </div>
-
-            {createdOrder && (
-              <div className="card print-area">
-                <h4>订单预览（可打印）</h4>
-                <div>订单号：{createdOrder.id}</div>
-                <div>客户：{createdOrder.customer_name || '—'} 电话：{createdOrder.customer_phone || '—'} 地址：{createdOrder.customer_address || '—'}</div>
-                <table style={{marginTop:8}}>
-                  <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead>
-                  <tbody>
-                    {createdOrder.items.map(it=> (
-                      <tr key={it.id}><td>{it.product_name}</td><td>¥{it.unit_price}</td><td>{it.quantity}</td><td>¥{it.subtotal}</td></tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div style={{marginTop:8}}>总计：<b>¥{createdOrder.total_amount}</b></div>
-                <button style={{marginTop:8}} onClick={printOrder}>打印订单</button>
-              </div>
-            )}
           </div>
         );
       };
 
       const App = () => {
         const [authed, setAuthed] = React.useState(!!localStorage.getItem('token'));
-        const [tab, setTab] = React.useState('products');
+        const [tab, setTab] = React.useState('dashboard');
+        const [previewOrderId, setPreviewOrderId] = React.useState(null);
+        const logout = () => { localStorage.removeItem('token'); location.reload(); };
         if (!authed) return <Login onLogin={()=>setAuthed(true)} />;
         return (
-          <>
-            <div className="card row" style={{justifyContent:'space-between'}}>
-              <div className="tabs">
-                {['products','customers','orders'].map(t=> (
-                  <button key={t} className={tab===t? 'active':''} onClick={()=>setTab(t)}>{t==='products'?'商品':'customers'===t?'客户':'订单'}</button>
-                ))}
-              </div>
-              <div>
-                <button className="secondary" onClick={()=>{localStorage.removeItem('token'); location.reload();}}>退出登录</button>
-              </div>
+          <div className="layout">
+            <Sidebar tab={tab} setTab={setTab} logout={logout} />
+            <div className="page">
+              {tab==='dashboard' && <Dashboard />}
+              {tab==='products' && <Products />}
+              {tab==='customers' && <Customers />}
+              {tab==='orders' && <OrdersList />}
+              {tab==='create' && <CreateOrder onOrderCreated={(id)=>{ setPreviewOrderId(id); setTab('orderPreview'); }} />}
+              {tab==='orderPreview' && <OrderPreviewPage orderId={previewOrderId} goOrders={()=>setTab('orders')} goCreate={()=>setTab('create')} />}
             </div>
-            {tab==='products' && <Products />}
-            {tab==='customers' && <Customers />}
-            {tab==='orders' && <Orders />}
-          </>
+          </div>
         );
       };
 
@@ -273,4 +599,3 @@
     </script>
   </body>
   </html>
-

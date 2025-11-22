@@ -38,6 +38,12 @@ Base.metadata.create_all(bind=engine)
 def seed_data():
     db = SessionLocal()
     try:
+        # migrate: add unit column to order_items if missing
+        with engine.connect() as conn:
+            res = conn.exec_driver_sql("PRAGMA table_info(order_items)").fetchall()
+            cols = {row[1] for row in res}
+            if "unit" not in cols:
+                conn.exec_driver_sql("ALTER TABLE order_items ADD COLUMN unit VARCHAR(10) DEFAULT '件' NOT NULL")
         # seed admin user
         if not db.query(User).filter(User.username == "admin").first():
             db.add(User(username="admin", password_hash=get_password_hash("admin"), display_name="管理员"))
