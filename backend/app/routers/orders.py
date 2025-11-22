@@ -19,8 +19,15 @@ router = APIRouter(prefix="/orders", tags=["订单"], dependencies=[Depends(get_
 
 
 @router.get("/", response_model=list[OrderOut])
-def list_orders(db: Session = Depends(get_db)):
-    return db.query(Order).order_by(Order.id.desc()).all()
+def list_orders(
+    page: int | None = Query(None, ge=1),
+    page_size: int | None = Query(None, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Order).order_by(Order.id.desc())
+    if page and page_size:
+        return q.offset((page - 1) * page_size).limit(page_size).all()
+    return q.all()
 
 
 @router.get("/{order_id}", response_model=OrderOut)

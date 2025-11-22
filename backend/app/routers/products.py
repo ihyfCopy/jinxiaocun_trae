@@ -19,8 +19,15 @@ router = APIRouter(prefix="/products", tags=["商品"], dependencies=[Depends(ge
 
 
 @router.get("/", response_model=list[ProductOut])
-def list_products(db: Session = Depends(get_db)):
-    return db.query(Product).order_by(Product.id.desc()).all()
+def list_products(
+    page: int | None = Query(None, ge=1),
+    page_size: int | None = Query(None, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Product).order_by(Product.id.desc())
+    if page and page_size:
+        return q.offset((page - 1) * page_size).limit(page_size).all()
+    return q.all()
 
 
 @router.post("/", response_model=ProductOut)
