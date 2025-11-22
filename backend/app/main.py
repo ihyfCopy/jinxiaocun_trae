@@ -44,6 +44,11 @@ def seed_data():
             cols = {row[1] for row in res}
             if "unit" not in cols:
                 conn.exec_driver_sql("ALTER TABLE order_items ADD COLUMN unit VARCHAR(10) DEFAULT '件' NOT NULL")
+            # migrate: add status column to orders if missing
+            res_orders = conn.exec_driver_sql("PRAGMA table_info(orders)").fetchall()
+            cols_orders = {row[1] for row in res_orders}
+            if "status" not in cols_orders:
+                conn.exec_driver_sql("ALTER TABLE orders ADD COLUMN status VARCHAR(20) DEFAULT '未付款' NOT NULL")
         # seed admin user
         if not db.query(User).filter(User.username == "admin").first():
             db.add(User(username="admin", password_hash=get_password_hash("admin"), display_name="管理员"))

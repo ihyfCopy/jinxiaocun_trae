@@ -19,7 +19,7 @@ class Product(Base):
     name = Column(String(200), nullable=False)
     sku = Column(String(100), unique=True, index=True)
     price = Column(Float, nullable=False, default=0.0)
-    stock = Column(Integer, nullable=False, default=0)
+    stock = Column(Float, nullable=False, default=0.0)
     description = Column(String(500))
 
     items = relationship("OrderItem", back_populates="product")
@@ -44,6 +44,7 @@ class Order(Base):
     customer_phone = Column(String(50))
     customer_address = Column(String(300))
     total_amount = Column(Float, default=0.0)
+    status = Column(String(20), nullable=False, default="未付款")
 
     customer = relationship("Customer", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
@@ -56,7 +57,7 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     product_name = Column(String(200), nullable=False)
     unit_price = Column(Float, nullable=False)
-    quantity = Column(Integer, nullable=False, default=1)
+    quantity = Column(Float, nullable=False, default=1.0)
     unit = Column(String(10), nullable=False, default="件")
     subtotal = Column(Float, nullable=False, default=0.0)
 

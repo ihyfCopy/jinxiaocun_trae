@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
 from ..models import Order, OrderItem, Product, Customer
-from ..schemas import OrderCreate, OrderOut, OrderPage
+from ..schemas import OrderCreate, OrderOut, OrderPage, OrderItemCreate
 from ..auth import get_current_user
 
 
@@ -22,12 +23,19 @@ router = APIRouter(prefix="/orders", tags=["订单"], dependencies=[Depends(get_
 def list_orders(
     page: int | None = Query(None, ge=1),
     page_size: int | None = Query(None, ge=1, le=200),
+    q: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    q = db.query(Order).order_by(Order.id.desc())
+    query = db.query(Order).order_by(Order.id.desc())
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            (func.coalesce(Order.customer_name, "").like(like)) |
+            (func.strftime('%Y-%m-%d %H:%M:%S', Order.created_at).like(like))
+        )
     if page and page_size:
-        return q.offset((page - 1) * page_size).limit(page_size).all()
-    return q.all()
+        return query.offset((page - 1) * page_size).limit(page_size).all()
+    return query.all()
 
 
 @router.get("/{order_id}", response_model=OrderOut)
@@ -48,6 +56,7 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
         customer_name=payload.customer_name,
         customer_phone=payload.customer_phone,
         customer_address=payload.customer_address,
+        status="未付款",
     )
 
     total = 0.0
@@ -57,7 +66,12 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail=f"商品不存在: {item.product_id}")
         if product.stock < item.quantity:
             raise HTTPException(status_code=400, detail=f"库存不足: {product.name}")
-        subtotal = product.price * item.quantity
+        price = getattr(item, "unit_price", None)
+        if price is None:
+            price = product.price
+        if price < 0:
+            raise HTTPException(status_code=400, detail=f"单价不合法: {price}")
+        subtotal = price * item.quantity
         total += subtotal
         unit = getattr(item, "unit", None) or "件"
         if unit not in ("件", "斤"):
@@ -65,14 +79,14 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
         order.items.append(OrderItem(
             product_id=product.id,
             product_name=product.name,
-            unit_price=product.price,
+            unit_price=price,
             quantity=item.quantity,
             unit=unit,
             subtotal=subtotal,
         ))
         product.stock -= item.quantity
 
-    # if selecting an existing customer, copy info
+    # if selecting an existing customer, copy info; else create temp customer
     if payload.customer_id:
         customer = db.query(Customer).filter(Customer.id == payload.customer_id).first()
         if customer:
@@ -83,9 +97,85 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
                 order.customer_phone = customer.phone
             if not order.customer_address:
                 order.customer_address = customer.address
+    else:
+        name = payload.customer_name or "散客"
+        phone = payload.customer_phone or None
+        address = payload.customer_address or None
+        temp_cust = Customer(name=name, phone=phone, address=address)
+        db.add(temp_cust)
+        db.flush()
+        order.customer = temp_cust
+        order.customer_id = temp_cust.id
+        order.customer_name = temp_cust.name
+        order.customer_phone = temp_cust.phone
+        order.customer_address = temp_cust.address
 
     order.total_amount = total
     db.add(order)
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/pay", response_model=OrderOut)
+def mark_order_paid(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    order.status = "已付款"
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+@router.post("/{order_id}/items", response_model=OrderOut)
+def add_order_item(order_id: int, payload: OrderItemCreate, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    product = db.query(Product).filter(Product.id == payload.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="商品不存在")
+    if product.stock < payload.quantity:
+        raise HTTPException(status_code=400, detail="库存不足")
+    unit = payload.unit or "件"
+    if unit not in ("件", "斤"):
+        raise HTTPException(status_code=400, detail="单位不合法")
+    price = payload.unit_price if payload.unit_price is not None else product.price
+    if price < 0:
+        raise HTTPException(status_code=400, detail="单价不合法")
+    subtotal = price * payload.quantity
+    item = OrderItem(
+        product_id=product.id,
+        product_name=product.name,
+        unit_price=price,
+        quantity=payload.quantity,
+        unit=unit,
+        subtotal=subtotal,
+    )
+    order.items.append(item)
+    product.stock -= payload.quantity
+    order.total_amount = sum(i.subtotal for i in order.items)
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+@router.delete("/{order_id}/items/{item_id}", response_model=OrderOut)
+def delete_order_item(order_id: int, item_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    item = db.query(OrderItem).filter(OrderItem.id == item_id, OrderItem.order_id == order_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="订单项不存在")
+    product = db.query(Product).filter(Product.id == item.product_id).first()
+    if product:
+        product.stock += item.quantity
+    db.delete(item)
+    db.commit()
+    db.refresh(order)
+    order.total_amount = sum(i.subtotal for i in order.items)
     db.commit()
     db.refresh(order)
     return order
@@ -93,9 +183,16 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
 def list_orders_paged(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=200),
+    q: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    q = db.query(Order).order_by(Order.id.desc())
-    total = q.count()
-    items = q.offset((page - 1) * page_size).limit(page_size).all()
+    query = db.query(Order).order_by(Order.id.desc())
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            (func.coalesce(Order.customer_name, "").like(like)) |
+            (func.strftime('%Y-%m-%d %H:%M:%S', Order.created_at).like(like))
+        )
+    total = query.count()
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
     return {"items": items, "total": total, "page": page, "page_size": page_size}

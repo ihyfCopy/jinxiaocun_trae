@@ -30,7 +30,7 @@ class ProductBase(BaseModel):
     name: str
     sku: Optional[str] = None
     price: float
-    stock: int
+    stock: float
     description: Optional[str] = None
 
 
@@ -42,7 +42,7 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     sku: Optional[str] = None
     price: Optional[float] = None
-    stock: Optional[int] = None
+    stock: Optional[float] = None
     description: Optional[str] = None
 
 
@@ -78,8 +78,9 @@ class CustomerOut(CustomerBase):
 
 class OrderItemCreate(BaseModel):
     product_id: int
-    quantity: int
+    quantity: float
     unit: str | None = None
+    unit_price: float | None = None
 
 
 class OrderCreate(BaseModel):
@@ -95,7 +96,7 @@ class OrderItemOut(BaseModel):
     product_id: int
     product_name: str
     unit_price: float
-    quantity: int
+    quantity: float
     unit: str | None = None
     subtotal: float
 
@@ -111,6 +112,7 @@ class OrderOut(BaseModel):
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
     customer_address: Optional[str] = None
+    status: str
     items: List[OrderItemOut]
 
     class Config:
