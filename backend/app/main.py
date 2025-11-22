@@ -75,3 +75,7 @@ def root():
 # 前端静态页面挂载
 WEB_DIR = str((Path(__file__).resolve().parents[2] / "web").resolve())
 app.mount("/ui", StaticFiles(directory=WEB_DIR, html=True), name="ui")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
