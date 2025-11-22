@@ -15,3 +15,15 @@
 停止服务
 
 - 在运行服务的终端按 Ctrl + C
+
+
+
+1. 运行 uvicorn 模块
+- 选择配置类型： Python
+- Interpreter：选你常用的虚拟环境（需安装 fastapi 、 uvicorn 、 sqlalchemy 、 pydantic ）
+- Run 方式： Module name
+- Module： uvicorn
+- Parameters： app.main:app --port 8000 --reload
+- Working directory： d:\code\trae_code\jinxiaocun\backend
+- 勾选： Add content roots to PYTHONPATH 和 Add source roots to PYTHONPATH
+- 说明：你截图里把工作目录设成了 backend\app ，这样 app.main 无法被找到；请改成 backend 。
