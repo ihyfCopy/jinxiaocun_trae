@@ -395,9 +395,10 @@
         const [pageSize, setPageSize] = React.useState(10);
         const [total, setTotal] = React.useState(0);
         const [preview, setPreview] = React.useState(null);
-        const load = async (p=page, ps=pageSize) => {
+        const [search, setSearch] = React.useState('');
+        const load = async (p=page, ps=pageSize, s=search) => {
           try {
-            const data = await fetchJSON(`${API}/orders/page?page=${p}&page_size=${ps}`);
+            const data = await fetchJSON(`${API}/orders/page?page=${p}&page_size=${ps}&q=${s||''}`);
             setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
           } catch (e) {
             const list = await fetchJSON(`${API}/orders/?page=${p}&page_size=${ps}`);
@@ -425,9 +426,31 @@
         return (
           <div className="card">
             <div style={{fontWeight:700, marginBottom:10}}>订单列表</div>
-            {items.length===0 ? <div className="muted" style={{padding:20}}>暂无订单</div> : (
+            {items.length===0 && !search ? <div className="muted" style={{padding:20}}>暂无订单</div> : (
               <table>
-                <thead><tr><th>订单号</th><th>客户</th><th>日期</th><th>金额</th><th>状态</th><th>操作</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>订单号</th>
+                    <th>
+                      <div style={{display:'flex', alignItems:'center', gap:8}}>
+                        客户
+                        <input 
+                          className="input" 
+                          style={{width:140, padding:'4px 8px', fontSize:13, fontWeight:'normal'}} 
+                          placeholder="搜索客户..." 
+                          value={search} 
+                          onChange={e=>setSearch(e.target.value)} 
+                          onKeyDown={e=>{if(e.key==='Enter') load(1, pageSize, search)}} 
+                        />
+                        <button className="btn" style={{padding:'4px 8px', fontSize:12}} onClick={()=>load(1, pageSize, search)}>🔍</button>
+                      </div>
+                    </th>
+                    <th>日期</th>
+                    <th>金额</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {items.map(o=> (
                     <tr key={o.id}>
