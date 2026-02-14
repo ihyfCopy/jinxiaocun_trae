@@ -376,7 +376,7 @@
         );
       };
 
-      const OrdersList = () => {
+      const OrdersList = ({ onEdit }) => {
         const [items, setItems] = React.useState([]);
         const [page, setPage] = React.useState(1);
         const [pageSize, setPageSize] = React.useState(10);
@@ -404,6 +404,11 @@
           win.print();
           win.close();
         };
+        const toggleStatus = async (o) => {
+          const res = await fetchJSON(`${API}/orders/${o.id}/pay`, { method:'POST' });
+          if(preview && preview.id === o.id) setPreview(res);
+          await load(page, pageSize);
+        };
         return (
           <div className="card">
             <div style={{fontWeight:700, marginBottom:10}}>订单列表</div>
@@ -417,8 +422,22 @@
                       <td>{o.customer_name||'—'}</td>
                       <td>{new Date(o.created_at).toLocaleString()}</td>
                       <td>¥{o.total_amount}</td>
-                      <td>—</td>
-                      <td className="row"><button className="btn" onClick={()=>openPreview(o.id)}>预览</button><button className="btn" onClick={()=>printOrder(o.id)}>打印</button></td>
+                      <td>
+                        <span style={{
+                            padding:'4px 8px', 
+                            borderRadius:4, 
+                            background: o.status==='已付款'?'#fee2e2':'#f3f4f6', 
+                            color: o.status==='已付款'?'#dc2626':'#374151',
+                            fontSize:12, fontWeight:600
+                        }}>
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="row">
+                        <button className="btn" onClick={()=>openPreview(o.id)}>查看订单</button>
+                        <button className="btn secondary" onClick={()=>onEdit(o)}>修改</button>
+                        <button className="btn" onClick={()=>printOrder(o.id)}>打印</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -442,20 +461,47 @@
             </div>
             {preview && (
               <div className="modal-mask" onClick={()=>setPreview(null)}>
-                <div className="modal" onClick={e=>e.stopPropagation()}>
-                  <div className="spaced"><div style={{fontWeight:700}}>订单预览 #{preview.id}</div><button className="btn secondary" onClick={()=>setPreview(null)}>关闭</button></div>
-                  <div style={{marginTop:10}}>客户：{preview.customer_name||'—'} 电话：{preview.customer_phone||'—'} 地址：{preview.customer_address||'—'}</div>
-                  <table style={{marginTop:10}}>
-                    <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead>
+                <div className="modal" style={{width: '90%', maxWidth: 1000}} onClick={e=>e.stopPropagation()}>
+                  <div className="spaced"><div style={{fontWeight:700, fontSize:20}}>订单详情 #{preview.id}</div><button className="btn secondary" onClick={()=>setPreview(null)}>关闭</button></div>
+                  
+                  <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:20, marginTop:20, padding:20, background:'#f9fafb', borderRadius:12}}>
+                    <div>
+                        <div className="muted" style={{marginBottom:4}}>客户信息</div>
+                        <div style={{fontSize:16, fontWeight:600}}>{preview.customer_name||'—'}</div>
+                        <div style={{marginTop:4}}>{preview.customer_phone||'—'}</div>
+                        <div style={{marginTop:4}}>{preview.customer_address||'—'}</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                        <div className="muted" style={{marginBottom:4}}>订单状态</div>
+                        <div style={{fontSize:18, fontWeight:700, color:preview.status==='已付款'?'#dc2626':'#374151'}}>{preview.status}</div>
+                        <div style={{marginTop:8}}>
+                            <button className={`btn ${preview.status==='已付款'?'secondary':''}`} onClick={()=>toggleStatus(preview)}>
+                                {preview.status==='已付款'?'标记为未付款':'标记为已付款'}
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+
+                  <table style={{marginTop:20}}>
+                    <thead><tr><th style={{padding:15}}>商品名称</th><th style={{padding:15}}>单价</th><th style={{padding:15}}>数量</th><th style={{padding:15}}>单位</th><th style={{padding:15}}>小计</th></tr></thead>
                     <tbody>
                       {preview.items.map(it=> (
-                        <tr key={it.id}><td>{it.product_name}</td><td>¥{it.unit_price}</td><td>{it.quantity}</td><td>{it.unit||'件'}</td><td>¥{it.subtotal}</td></tr>
+                        <tr key={it.id}>
+                            <td style={{padding:15, fontSize:16}}>{it.product_name}</td>
+                            <td style={{padding:15}}>¥{it.unit_price}</td>
+                            <td style={{padding:15}}>{it.quantity}</td>
+                            <td style={{padding:15}}>{it.unit||'件'}</td>
+                            <td style={{padding:15, fontWeight:600}}>¥{it.subtotal}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
-                  <div className="spaced" style={{marginTop:10}}>
-                    <div>总计：<b>¥{preview.total_amount}</b></div>
-                    <button className="btn" onClick={()=>printOrder(preview.id)}>打印订单</button>
+                  <div className="spaced" style={{marginTop:20, borderTop:'1px solid #e5e7eb', paddingTop:20}}>
+                    <div style={{fontSize:24}}>总计：<b>¥{preview.total_amount}</b></div>
+                    <div className="row">
+                        <button className="btn secondary" style={{padding:'12px 24px', fontSize:16}} onClick={()=>{setPreview(null); onEdit(preview);}}>修改订单</button>
+                        <button className="btn" style={{padding:'12px 24px', fontSize:16}} onClick={()=>printOrder(preview.id)}>打印订单</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -464,12 +510,13 @@
         );
       };
 
-      const CreateOrder = ({ onOrderCreated }) => {
+      const CreateOrder = ({ onOrderCreated, editingOrder, onCancelEdit }) => {
         const [products, setProducts] = React.useState([]);
         const [customers, setCustomers] = React.useState([]);
 
         // Load saved draft or default values
         const getSavedState = (key, def) => {
+            if (editingOrder) return def; // Don't load draft when editing
             try { const v = localStorage.getItem('create_order_' + key); return v ? JSON.parse(v) : def; } 
             catch { return def; }
         };
@@ -479,25 +526,51 @@
         const [customCustomer, setCustomCustomer] = React.useState(() => getSavedState('custom_c', { name:'', phone:'', address:'' }));
         
         const [selProductId, setSelProductId] = React.useState('');
+        const [price, setPrice] = React.useState('');
         const [quantity, setQuantity] = React.useState(1);
         const [selUnit, setSelUnit] = React.useState('件');
         
         const [cart, setCart] = React.useState(() => getSavedState('cart', []));
 
-        // Persist state changes
-        React.useEffect(() => { localStorage.setItem('create_order_mode', JSON.stringify(mode)); }, [mode]);
-        React.useEffect(() => { localStorage.setItem('create_order_cid', JSON.stringify(selectedCustomerId)); }, [selectedCustomerId]);
-        React.useEffect(() => { localStorage.setItem('create_order_custom_c', JSON.stringify(customCustomer)); }, [customCustomer]);
-        React.useEffect(() => { localStorage.setItem('create_order_cart', JSON.stringify(cart)); }, [cart]);
+        // Init with editingOrder if present
+        React.useEffect(() => {
+            if (editingOrder) {
+                setCart(editingOrder.items.map(i => ({
+                    product_id: i.product_id,
+                    name: i.product_name,
+                    price: i.unit_price,
+                    quantity: i.quantity,
+                    unit: i.unit
+                })));
+                if (editingOrder.customer_id) {
+                    setMode('existing');
+                    setSelectedCustomerId(editingOrder.customer_id);
+                } else {
+                    setMode('temp');
+                    setCustomCustomer({
+                        name: editingOrder.customer_name || '',
+                        phone: editingOrder.customer_phone || '',
+                        address: editingOrder.customer_address || ''
+                    });
+                }
+            }
+        }, [editingOrder]);
+
+        // Persist state changes (only if not editing existing order)
+        React.useEffect(() => { if(!editingOrder) localStorage.setItem('create_order_mode', JSON.stringify(mode)); }, [mode, editingOrder]);
+        React.useEffect(() => { if(!editingOrder) localStorage.setItem('create_order_cid', JSON.stringify(selectedCustomerId)); }, [selectedCustomerId, editingOrder]);
+        React.useEffect(() => { if(!editingOrder) localStorage.setItem('create_order_custom_c', JSON.stringify(customCustomer)); }, [customCustomer, editingOrder]);
+        React.useEffect(() => { if(!editingOrder) localStorage.setItem('create_order_cart', JSON.stringify(cart)); }, [cart, editingOrder]);
 
         React.useEffect(()=> { (async()=>{ setProducts(await fetchJSON(`${API}/products/`)); setCustomers(await fetchJSON(`${API}/customers/`)); })(); }, []);
         const add = () => {
           if(!selProductId) return;
           const p = products.find(x=> x.id === Number(selProductId));
+          const finalPrice = price === '' ? p.price : parseFloat(price);
           const ex = cart.find(i=> i.product_id === p.id);
-          if (ex) setCart(cart.map(i=> i.product_id===p.id ? { ...i, quantity: i.quantity + quantity } : i));
-          else setCart([...cart, { product_id: p.id, name: p.name, price: p.price, quantity, unit: selUnit }]);
-          setSelProductId(''); setQuantity(1); setSelUnit('件');
+          if (ex) setCart(cart.map(i=> i.product_id===p.id ? { ...i, quantity: i.quantity + quantity, price: finalPrice, unit: selUnit } : i));
+          else setCart([...cart, { product_id: p.id, name: p.name, price: finalPrice, quantity, unit: selUnit }]);
+          setSelProductId(''); setPrice(''); setQuantity(1); setSelUnit('件');
         };
         const changeQty = (pid, q) => setCart(cart.map(i=> i.product_id===pid ? { ...i, quantity: Math.max(1, q) } : i));
         const total = cart.reduce((s,i)=> s + i.price * i.quantity, 0);
@@ -507,23 +580,38 @@
             customer_name: mode!=='existing' ? customCustomer.name || undefined : undefined,
             customer_phone: mode!=='existing' ? customCustomer.phone || undefined : undefined,
             customer_address: mode!=='existing' ? customCustomer.address || undefined : undefined,
-            items: cart.map(i=> ({ product_id: i.product_id, quantity: i.quantity }))
+            items: cart.map(i=> ({ product_id: i.product_id, quantity: i.quantity, unit: i.unit, unit_price: i.price }))
           };
-          const order = await fetchJSON(`${API}/orders/`, { method: 'POST', body: JSON.stringify(payload) });
-          if (onOrderCreated) onOrderCreated(order.id); else alert(`下单成功，订单号：${order.id}`);
           
-          // Clear draft
-          setCart([]);
-          setMode('existing');
-          setSelectedCustomerId('');
-          setCustomCustomer({ name:'', phone:'', address:'' });
-          ['cart', 'mode', 'cid', 'custom_c'].forEach(k => localStorage.removeItem('create_order_' + k));
+          let orderId;
+          if (editingOrder) {
+             const order = await fetchJSON(`${API}/orders/${editingOrder.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+             orderId = order.id;
+             alert(`订单 #${order.id} 修改成功`);
+             if(onCancelEdit) onCancelEdit(); // Return to list
+          } else {
+             const order = await fetchJSON(`${API}/orders/`, { method: 'POST', body: JSON.stringify(payload) });
+             orderId = order.id;
+             alert(`下单成功，订单号：${order.id}`);
+             
+             // Clear draft
+             setCart([]);
+             setMode('existing');
+             setSelectedCustomerId('');
+             setCustomCustomer({ name:'', phone:'', address:'' });
+             ['cart', 'mode', 'cid', 'custom_c'].forEach(k => localStorage.removeItem('create_order_' + k));
+          }
+
+          if (onOrderCreated) onOrderCreated(orderId);
         };
         return (
           <div className="row">
             <div className="grid" style={{flex:'1 1 50%'}}>
               <div className="step">
-                <div style={{fontWeight:700, marginBottom:10}}>1 客户信息</div>
+                <div className="spaced">
+                    <div style={{fontWeight:700, marginBottom:10}}>{editingOrder ? `修改订单 #${editingOrder.id}` : '1 客户信息'}</div>
+                    {editingOrder && <button className="btn secondary" onClick={onCancelEdit}>取消修改</button>}
+                </div>
                 <div className="row" style={{marginBottom:10}}>
                   <label className="row"><input type="radio" checked={mode==='existing'} onChange={()=>setMode('existing')} /> 选择已有客户</label>
                   <label className="row"><input type="radio" checked={mode!=='existing'} onChange={()=>setMode('temp')} /> 临时/散客</label>
@@ -546,14 +634,19 @@
                 <div className="row" style={{alignItems:'flex-end'}}>
                   <div style={{flex:1}}>
                     <div className="muted" style={{marginBottom:6}}>选择商品</div>
-                    <select className="select" value={selProductId} onChange={e=>setSelProductId(e.target.value)}>
+                    <select className="select" value={selProductId} onChange={e=>{
+                      const pid = e.target.value;
+                      setSelProductId(pid);
+                      const p = products.find(x=>x.id===Number(pid));
+                      if(p) setPrice(p.price); else setPrice('');
+                    }}>
                       <option value="">-- 请选择商品 --</option>
                       {products.map(p=> <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
                   <div style={{width:120}}>
                     <div className="muted" style={{marginBottom:6}}>单价(¥)</div>
-                    <input className="input" disabled value={(products.find(x=>x.id===Number(selProductId))?.price ?? '')} />
+                    <input className="input" type="number" placeholder="单价" value={price} onChange={e=>setPrice(e.target.value)} />
                   </div>
                   <div style={{width:100}}>
                     <div className="muted" style={{marginBottom:6}}>数量</div>
@@ -574,7 +667,7 @@
               <div style={{fontWeight:700, marginBottom:10}}>购物车 / 订单详情</div>
               {cart.length===0 ? <div className="muted" style={{padding:20}}>暂无商品</div> : (
                 <table>
-                  <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th></tr></thead>
+                  <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>单位</th><th>小计</th><th>操作</th></tr></thead>
                   <tbody>
                     {cart.map(i=> (
                       <tr key={i.product_id}>
@@ -582,6 +675,7 @@
                         <td><input className="input" type="number" value={i.quantity} onChange={e=>changeQty(i.product_id, parseInt(e.target.value||1))} /></td>
                         <td>{i.unit||'件'}</td>
                         <td>¥{(i.price*i.quantity).toFixed(2)}</td>
+                        <td><button className="btn secondary" style={{padding:'4px 8px'}} onClick={()=>setCart(cart.filter(x=>x.product_id!==i.product_id))}>删除</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -589,7 +683,7 @@
               )}
               <div className="spaced" style={{marginTop:10}}>
                 <div>合计：<b>¥{total.toFixed(2)}</b></div>
-                <button className="btn" onClick={submit} disabled={cart.length===0}>确认下单</button>
+                <button className="btn" onClick={submit} disabled={cart.length===0}>{editingOrder ? '保存修改' : '确认下单'}</button>
               </div>
             </div>
           </div>
@@ -600,6 +694,7 @@
         const [authed, setAuthed] = React.useState(!!localStorage.getItem('token'));
         const [tab, setTab] = React.useState('dashboard');
         const [previewOrderId, setPreviewOrderId] = React.useState(null);
+        const [editingOrder, setEditingOrder] = React.useState(null);
         const logout = () => { localStorage.removeItem('token'); location.reload(); };
         if (!authed) return <Login onLogin={()=>setAuthed(true)} />;
         return (
@@ -609,8 +704,16 @@
               {tab==='dashboard' && <Dashboard />}
               {tab==='products' && <Products />}
               {tab==='customers' && <Customers />}
-              {tab==='orders' && <OrdersList />}
-              {tab==='create' && <CreateOrder onOrderCreated={(id)=>{ setPreviewOrderId(id); setTab('orderPreview'); }} />}
+              {tab==='orders' && <OrdersList onEdit={(o)=>{ setEditingOrder(o); setTab('create'); }} />}
+              {tab==='create' && <CreateOrder 
+                editingOrder={editingOrder}
+                onCancelEdit={()=>{ setEditingOrder(null); setTab('orders'); }}
+                onOrderCreated={(id)=>{ 
+                  setPreviewOrderId(id); 
+                  setEditingOrder(null);
+                  setTab('orderPreview'); 
+                }} 
+              />}
               {tab==='orderPreview' && <OrderPreviewPage orderId={previewOrderId} goOrders={()=>setTab('orders')} goCreate={()=>setTab('create')} />}
             </div>
           </div>

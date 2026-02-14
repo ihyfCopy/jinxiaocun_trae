@@ -84,7 +84,8 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
             unit=unit,
             subtotal=subtotal,
         ))
-        product.stock -= item.quantity
+        if unit != '斤':
+            product.stock -= item.quantity
 
     # if selecting an existing customer, copy info; else create temp customer
     if payload.customer_id:
@@ -118,11 +119,98 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/{order_id}/pay", response_model=OrderOut)
-def mark_order_paid(order_id: int, db: Session = Depends(get_db)):
+def toggle_order_status(order_id: int, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="订单不存在")
-    order.status = "已付款"
+    
+    if order.status == "已付款":
+        order.status = "未付款"
+    else:
+        order.status = "已付款"
+        
+    db.commit()
+    db.refresh(order)
+    return order
+
+
+@router.put("/{order_id}", response_model=OrderOut)
+def update_order(order_id: int, payload: OrderCreate, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="订单不存在")
+    
+    # 1. Restore stock for existing items
+    for item in order.items:
+        if item.unit != '斤':
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if product:
+                product.stock += item.quantity
+    
+    # 2. Clear existing items
+    # Using cascade="all, delete-orphan" in model, so removing from list should work, 
+    # but explicit delete is safer to ensure stock logic was handled first (above).
+    # Actually, we just restored stock. Now we can clear the list.
+    order.items.clear()
+    
+    # 3. Update customer info
+    if payload.customer_id:
+        customer = db.query(Customer).filter(Customer.id == payload.customer_id).first()
+        if customer:
+            order.customer = customer
+            order.customer_id = customer.id
+            order.customer_name = customer.name
+            order.customer_phone = customer.phone
+            order.customer_address = customer.address
+    else:
+        order.customer_id = None
+        order.customer_name = payload.customer_name
+        order.customer_phone = payload.customer_phone
+        order.customer_address = payload.customer_address
+        
+    # 4. Add new items
+    total = 0.0
+    for item in payload.items:
+        product = db.query(Product).filter(Product.id == item.product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail=f"商品不存在: {item.product_id}")
+        
+        # Check stock (now that we restored old stock, we are checking against available)
+        # Note: if product was in old order, its stock is back.
+        if item.unit != '斤' and product.stock < item.quantity:
+             # Rollback? The stock restoration is already done in memory but not committed? 
+             # No, we haven't committed yet. So product.stock in DB + restored amount?
+             # Wait, `product` object is from session. 
+             # If I updated `product.stock` in step 1, the session has the new value.
+             pass
+        
+        if item.unit != '斤':
+            if product.stock < item.quantity:
+                 raise HTTPException(status_code=400, detail=f"库存不足: {product.name} (剩余 {product.stock})")
+            product.stock -= item.quantity
+            
+        price = getattr(item, "unit_price", None)
+        if price is None:
+            price = product.price
+        if price < 0:
+            raise HTTPException(status_code=400, detail=f"单价不合法: {price}")
+            
+        subtotal = price * item.quantity
+        total += subtotal
+        unit = getattr(item, "unit", None) or "件"
+        if unit not in ("件", "斤"):
+            raise HTTPException(status_code=400, detail=f"单位不合法: {unit}")
+            
+        order.items.append(OrderItem(
+            product_id=product.id,
+            product_name=product.name,
+            unit_price=price,
+            quantity=item.quantity,
+            unit=unit,
+            subtotal=subtotal,
+        ))
+        
+    order.total_amount = total
     db.commit()
     db.refresh(order)
     return order
@@ -154,7 +242,8 @@ def add_order_item(order_id: int, payload: OrderItemCreate, db: Session = Depend
         subtotal=subtotal,
     )
     order.items.append(item)
-    product.stock -= payload.quantity
+    if unit != '斤':
+        product.stock -= payload.quantity
     order.total_amount = sum(i.subtotal for i in order.items)
     db.commit()
     db.refresh(order)
@@ -170,7 +259,7 @@ def delete_order_item(order_id: int, item_id: int, db: Session = Depends(get_db)
     if not item:
         raise HTTPException(status_code=404, detail="订单项不存在")
     product = db.query(Product).filter(Product.id == item.product_id).first()
-    if product:
+    if product and item.unit != '斤':
         product.stock += item.quantity
     db.delete(item)
     db.commit()
