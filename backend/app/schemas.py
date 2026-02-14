@@ -28,10 +28,11 @@ class UserOut(UserBase):
 
 class ProductBase(BaseModel):
     name: str
-    sku: Optional[str] = None
+    sku: Optional[str] = "无"
     price: float
     stock: float
     description: Optional[str] = None
+    original_weight: Optional[str] = "无"
 
 
 class ProductCreate(ProductBase):
@@ -44,6 +45,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     stock: Optional[float] = None
     description: Optional[str] = None
+    original_weight: Optional[str] = None
 
 
 class ProductOut(ProductBase):
@@ -55,7 +57,7 @@ class ProductOut(ProductBase):
 
 class CustomerBase(BaseModel):
     name: str
-    phone: Optional[str] = None
+    phone: Optional[str] = "无"
     address: Optional[str] = None
 
 

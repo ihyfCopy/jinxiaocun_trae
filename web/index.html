@@ -201,7 +201,7 @@
         const [pageSize, setPageSize] = React.useState(10);
         const [total, setTotal] = React.useState(0);
         const [visible, setVisible] = React.useState(false);
-        const [form, setForm] = React.useState({ name:'', sku:'', price:0, stock:0, description:'' });
+        const [form, setForm] = React.useState({ name:'', sku:'无', price:0, stock:0, description:'', original_weight:'无' });
         const [editing, setEditing] = React.useState(null);
         const load = async (p=page, ps=pageSize) => {
           try {
@@ -215,9 +215,13 @@
         };
         React.useEffect(()=>{ load(1, pageSize); },[]);
         const submit = async () => {
-          if (editing) await fetchJSON(`${API}/products/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
-          else await fetchJSON(`${API}/products/`, { method: 'POST', body: JSON.stringify(form) });
-          setForm({ name:'', sku:'', price:0, stock:0, description:'' }); setEditing(null); setVisible(false); await load(page, pageSize);
+          const payload = { ...form };
+          if(!payload.sku) payload.sku = "无";
+          if(!payload.original_weight) payload.original_weight = "无";
+
+          if (editing) await fetchJSON(`${API}/products/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+          else await fetchJSON(`${API}/products/`, { method: 'POST', body: JSON.stringify(payload) });
+          setForm({ name:'', sku:'无', price:0, stock:0, description:'', original_weight:'无' }); setEditing(null); setVisible(false); await load(page, pageSize);
         };
         const del = async (id) => { await fetchJSON(`${API}/products/${id}`, { method:'DELETE' }); await load(page, pageSize); };
         return (
@@ -226,17 +230,17 @@
               <div className="toolbar" style={{width:'60%'}}>
                 <input className="input" placeholder="搜索商品..." />
               </div>
-              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', sku:'', price:0, stock:0, description:'' }); setVisible(true); }}>新增商品</button>
+              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', sku:'无', price:0, stock:0, description:'', original_weight:'无' }); setVisible(true); }}>新增商品</button>
             </div>
             <div className="card">
               {items.length===0 ? <div className="muted" style={{padding:20}}>暂无商品</div> : (
                 <table>
-                  <thead><tr><th>商品名称</th><th>SKU</th><th>库存</th><th>单价</th><th>操作</th></tr></thead>
+                  <thead><tr><th>商品名称</th><th>SKU</th><th>原装斤量</th><th>库存</th><th>单价</th><th>操作</th></tr></thead>
                   <tbody>
                     {items.map(p=> (
                       <tr key={p.id}>
-                        <td>{p.name}</td><td>{p.sku}</td><td>{p.stock}</td><td>¥{p.price}</td>
-                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(p); setForm({ name:p.name, sku:p.sku||'', price:p.price, stock:p.stock, description:p.description||'' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(p.id)}>删除</button></td>
+                        <td>{p.name}</td><td>{p.sku}</td><td>{p.original_weight||'无'}</td><td>{p.stock}</td><td>¥{p.price}</td>
+                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(p); setForm({ name:p.name, sku:p.sku||'无', price:p.price, stock:p.stock, description:p.description||'', original_weight:p.original_weight||'无' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(p.id)}>删除</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -271,6 +275,12 @@
                         <div className="muted" style={{marginBottom:6}}>SKU</div>
                         <input className="input" placeholder="SKU" value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} />
                       </div>
+                      <div style={{flex:1}}>
+                        <div className="muted" style={{marginBottom:6}}>原装斤量</div>
+                        <input className="input" placeholder="原装斤量" value={form.original_weight} onChange={e=>setForm({...form, original_weight:e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="row">
                       <div style={{width:160}}>
                         <div className="muted" style={{marginBottom:6}}>数量</div>
                         <input className="input" type="number" placeholder="数量" value={form.stock} onChange={e=>setForm({...form, stock:parseInt(e.target.value||0)})} />
@@ -298,7 +308,7 @@
         const [pageSize, setPageSize] = React.useState(10);
         const [total, setTotal] = React.useState(0);
         const [visible, setVisible] = React.useState(false);
-        const [form, setForm] = React.useState({ name:'', phone:'', address:'' });
+        const [form, setForm] = React.useState({ name:'', phone:'无', address:'' });
         const [editing, setEditing] = React.useState(null);
         const load = async (p=page, ps=pageSize) => {
           try {
@@ -312,9 +322,12 @@
         };
         React.useEffect(()=>{ load(1, pageSize); },[]);
         const submit = async () => {
-          if (editing) await fetchJSON(`${API}/customers/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) });
-          else await fetchJSON(`${API}/customers/`, { method: 'POST', body: JSON.stringify(form) });
-          setForm({ name:'', phone:'', address:'' }); setEditing(null); setVisible(false); await load(page, pageSize);
+          const payload = { ...form };
+          if(!payload.phone) payload.phone = "无";
+
+          if (editing) await fetchJSON(`${API}/customers/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+          else await fetchJSON(`${API}/customers/`, { method: 'POST', body: JSON.stringify(payload) });
+          setForm({ name:'', phone:'无', address:'' }); setEditing(null); setVisible(false); await load(page, pageSize);
         };
         const del = async (id) => { await fetchJSON(`${API}/customers/${id}`, { method:'DELETE' }); await load(page, pageSize); };
         return (
@@ -323,7 +336,7 @@
               <div className="toolbar" style={{width:'60%'}}>
                 <input className="input" placeholder="搜索客户..." />
               </div>
-              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', phone:'', address:'' }); setVisible(true); }}>新增客户</button>
+              <button className="btn" onClick={()=>{ setEditing(null); setForm({ name:'', phone:'无', address:'' }); setVisible(true); }}>新增客户</button>
             </div>
             <div className="card">
               {items.length===0 ? <div className="muted" style={{padding:20}}>暂无客户</div> : (
@@ -333,7 +346,7 @@
                     {items.map(c=> (
                       <tr key={c.id}>
                         <td>{c.name}</td><td>{c.phone}</td><td>{c.address}</td>
-                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(c); setForm({ name:c.name, phone:c.phone||'', address:c.address||'' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(c.id)}>删除</button></td>
+                        <td className="row"><button className="btn secondary" onClick={()=>{ setEditing(c); setForm({ name:c.name, phone:c.phone||'无', address:c.address||'' }); setVisible(true); }}>编辑</button><button className="btn" onClick={()=>del(c.id)}>删除</button></td>
                       </tr>
                     ))}
                   </tbody>

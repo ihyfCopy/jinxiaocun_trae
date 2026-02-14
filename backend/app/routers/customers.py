@@ -32,7 +32,9 @@ def list_customers(
 
 @router.post("/", response_model=CustomerOut)
 def create_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
-    customer = Customer(**payload.model_dump())
+    if not payload.phone:
+        payload.phone = "无"
+    customer = Customer(**payload.dict())
     db.add(customer)
     db.commit()
     db.refresh(customer)
@@ -44,8 +46,12 @@ def update_customer(customer_id: int, payload: CustomerUpdate, db: Session = Dep
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if not customer:
         raise HTTPException(status_code=404, detail="客户不存在")
-    for k, v in payload.model_dump(exclude_unset=True).items():
-        setattr(customer, k, v)
+    for key, value in payload.dict(exclude_unset=True).items():
+        setattr(customer, key, value)
+    
+    if not customer.phone:
+        customer.phone = "无"
+        
     db.commit()
     db.refresh(customer)
     return customer

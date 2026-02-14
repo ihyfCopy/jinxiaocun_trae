@@ -49,6 +49,17 @@ def seed_data():
             cols_orders = {row[1] for row in res_orders}
             if "status" not in cols_orders:
                 conn.exec_driver_sql("ALTER TABLE orders ADD COLUMN status VARCHAR(20) DEFAULT '未付款' NOT NULL")
+            
+            # migrate: add original_weight to products
+            res_products = conn.exec_driver_sql("PRAGMA table_info(products)").fetchall()
+            cols_products = {row[1] for row in res_products}
+            if "original_weight" not in cols_products:
+                conn.exec_driver_sql("ALTER TABLE products ADD COLUMN original_weight TEXT DEFAULT '无'")
+            
+            # update defaults
+            conn.exec_driver_sql("UPDATE products SET sku = '无' WHERE sku IS NULL OR sku = ''")
+            conn.exec_driver_sql("UPDATE customers SET phone = '无' WHERE phone IS NULL OR phone = ''")
+            
         # seed admin user
         if not db.query(User).filter(User.username == "admin").first():
             db.add(User(username="admin", password_hash=get_password_hash("admin"), display_name="管理员"))

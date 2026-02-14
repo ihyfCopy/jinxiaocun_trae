@@ -17,10 +17,11 @@ class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False)
-    sku = Column(String(100), unique=True, index=True)
+    sku = Column(String(100), unique=True, index=True, default="无")
     price = Column(Float, nullable=False, default=0.0)
     stock = Column(Float, nullable=False, default=0.0)
     description = Column(String(500))
+    original_weight = Column(String(50), default="无")
 
     items = relationship("OrderItem", back_populates="product")
 
@@ -29,7 +30,7 @@ class Customer(Base):
     __tablename__ = "customers"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(200), nullable=False)
-    phone = Column(String(50))
+    phone = Column(String(50), default="无")
     address = Column(String(300))
 
     orders = relationship("Order", back_populates="customer")

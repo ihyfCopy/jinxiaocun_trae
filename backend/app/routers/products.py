@@ -32,7 +32,17 @@ def list_products(
 
 @router.post("/", response_model=ProductOut)
 def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
+    if payload.sku and payload.sku != "无":
+        exist = db.query(Product).filter(Product.sku == payload.sku).first()
+        if exist:
+            raise HTTPException(status_code=400, detail="SKU已存在")
+
     product = Product(**payload.model_dump())
+    if not product.sku:
+        product.sku = "无"
+    if not product.original_weight:
+        product.original_weight = "无"
+
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -44,8 +54,20 @@ def update_product(product_id: int, payload: ProductUpdate, db: Session = Depend
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="商品不存在")
+
+    if payload.sku and payload.sku != "无" and payload.sku != product.sku:
+        exist = db.query(Product).filter(Product.sku == payload.sku).first()
+        if exist:
+            raise HTTPException(status_code=400, detail="SKU已存在")
+
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(product, k, v)
+
+    if not product.sku:
+        product.sku = "无"
+    if not product.original_weight:
+        product.original_weight = "无"
+
     db.commit()
     db.refresh(product)
     return product
