@@ -198,13 +198,19 @@
       const Products = () => {
         const [items, setItems] = React.useState([]);
         const [page, setPage] = React.useState(1);
-        const [pageSize, setPageSize] = React.useState(10);
+        const [pageSize, setPageSize] = React.useState(20);
         const [total, setTotal] = React.useState(0);
         const [visible, setVisible] = React.useState(false);
         const [form, setForm] = React.useState({ name:'', sku:'无', price:0, stock:0, description:'', original_weight:'无' });
         const [editing, setEditing] = React.useState(null);
         const load = async (p=page, ps=pageSize) => {
           try {
+            if (ps === -1) {
+              const list = await fetchJSON(`${API}/products/`);
+              setItems(list); setTotal(list.length); setPage(1); setPageSize(-1);
+              return;
+            }
+
             const data = await fetchJSON(`${API}/products/page?page=${p}&page_size=${ps}`);
             setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
           } catch (e) {
@@ -214,6 +220,7 @@
           }
         };
         React.useEffect(()=>{ load(1, pageSize); },[]);
+        const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(total / pageSize));
         const submit = async () => {
           const payload = { ...form };
           if(!payload.sku) payload.sku = "无";
@@ -250,16 +257,16 @@
                 <div className="row">
                   <span className="muted">每页</span>
                   <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
-                    <option value={10}>10</option>
                     <option value={20}>20</option>
                     <option value={50}>50</option>
+                    <option value={-1}>全部</option>
                   </select>
                   <span className="muted">共 {total} 条</span>
                 </div>
                 <div className="row">
-                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
-                  <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
-                  <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1 || pageSize===-1}>上一页</button>
+                  <div style={{padding:'0 8px'}}>第 {pageSize===-1 ? 1 : page} 页 / 共 {totalPages} 页</div>
+                  <button className="btn secondary" onClick={()=> load(Math.min(totalPages, page+1), pageSize)} disabled={pageSize===-1 || page >= totalPages}>下一页</button>
                 </div>
               </div>
             </div>
@@ -305,13 +312,19 @@
       const Customers = () => {
         const [items, setItems] = React.useState([]);
         const [page, setPage] = React.useState(1);
-        const [pageSize, setPageSize] = React.useState(10);
+        const [pageSize, setPageSize] = React.useState(20);
         const [total, setTotal] = React.useState(0);
         const [visible, setVisible] = React.useState(false);
         const [form, setForm] = React.useState({ name:'', phone:'无', address:'' });
         const [editing, setEditing] = React.useState(null);
         const load = async (p=page, ps=pageSize) => {
           try {
+            if (ps === -1) {
+              const list = await fetchJSON(`${API}/customers/`);
+              setItems(list); setTotal(list.length); setPage(1); setPageSize(-1);
+              return;
+            }
+
             const data = await fetchJSON(`${API}/customers/page?page=${p}&page_size=${ps}`);
             setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
           } catch (e) {
@@ -321,6 +334,7 @@
           }
         };
         React.useEffect(()=>{ load(1, pageSize); },[]);
+        const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(total / pageSize));
         const submit = async () => {
           const payload = { ...form };
           if(!payload.phone) payload.phone = "无";
@@ -356,16 +370,16 @@
                 <div className="row">
                   <span className="muted">每页</span>
                   <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
-                    <option value={10}>10</option>
                     <option value={20}>20</option>
                     <option value={50}>50</option>
+                    <option value={-1}>全部</option>
                   </select>
                   <span className="muted">共 {total} 条</span>
                 </div>
                 <div className="row">
-                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
-                  <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
-                  <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+                  <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1 || pageSize===-1}>上一页</button>
+                  <div style={{padding:'0 8px'}}>第 {pageSize===-1 ? 1 : page} 页 / 共 {totalPages} 页</div>
+                  <button className="btn secondary" onClick={()=> load(Math.min(totalPages, page+1), pageSize)} disabled={pageSize===-1 || page >= totalPages}>下一页</button>
                 </div>
               </div>
             </div>
@@ -392,13 +406,20 @@
       const OrdersList = ({ onEdit }) => {
         const [items, setItems] = React.useState([]);
         const [page, setPage] = React.useState(1);
-        const [pageSize, setPageSize] = React.useState(10);
+        const [pageSize, setPageSize] = React.useState(20);
         const [total, setTotal] = React.useState(0);
         const [preview, setPreview] = React.useState(null);
         const [search, setSearch] = React.useState('');
-        const load = async (p=page, ps=pageSize, s=search) => {
+        const [dateFilter, setDateFilter] = React.useState('');
+        const load = async (p=page, ps=pageSize, s=search, d=dateFilter) => {
           try {
-            const data = await fetchJSON(`${API}/orders/page?page=${p}&page_size=${ps}&q=${s||''}`);
+            if (ps === -1) {
+              const list = await fetchJSON(`${API}/orders/?q=${encodeURIComponent(s||'')}&created_date=${encodeURIComponent(d||'')}`);
+              setItems(list); setTotal(list.length); setPage(1); setPageSize(-1);
+              return;
+            }
+
+            const data = await fetchJSON(`${API}/orders/page?page=${p}&page_size=${ps}&q=${encodeURIComponent(s||'')}&created_date=${encodeURIComponent(d||'')}`);
             setItems(data.items); setTotal(data.total); setPage(p); setPageSize(ps);
           } catch (e) {
             const list = await fetchJSON(`${API}/orders/?page=${p}&page_size=${ps}`);
@@ -406,7 +427,8 @@
             setItems(list); setTotal(totalGuess); setPage(p); setPageSize(ps);
           }
         };
-        React.useEffect(()=>{ load(1, pageSize); },[]);
+        React.useEffect(()=>{ load(1, pageSize, search, dateFilter); },[]);
+        const totalPages = pageSize === -1 ? 1 : Math.max(1, Math.ceil(total / pageSize));
         const openPreview = async (id) => { setPreview(await fetchJSON(`${API}/orders/${id}`)); };
         const printOrder = async (id) => {
           const data = preview && preview.id===id ? preview : await fetchJSON(`${API}/orders/${id}`);
@@ -426,53 +448,92 @@
         return (
           <div className="card">
             <div style={{fontWeight:700, marginBottom:10}}>订单列表</div>
-            {items.length===0 && !search ? <div className="muted" style={{padding:20}}>暂无订单</div> : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>订单号</th>
-                    <th>
-                      <div style={{display:'flex', alignItems:'center', gap:8}}>
-                        客户
-                        <div style={{position:'relative', width:160}}>
-                          <input 
-                            className="input" 
-                            style={{width:160, padding:'4px 28px 4px 8px', fontSize:13, fontWeight:'normal'}} 
-                            placeholder="搜索客户..." 
-                            value={search} 
-                            onChange={e=>setSearch(e.target.value)} 
-                            onKeyDown={e=>{if(e.key==='Enter') load(1, pageSize, search)}} 
-                          />
-                          {search && (
-                            <button
-                              className="btn secondary"
-                              style={{
-                                position:'absolute',
-                                right:4,
-                                top:'50%',
-                                transform:'translateY(-50%)',
-                                padding:'2px 8px',
-                                borderRadius:999,
-                                fontSize:12,
-                                lineHeight:'14px',
-                              }}
-                              onClick={()=>{ setSearch(''); load(1, pageSize, ''); }}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                        <button className="btn" style={{padding:'4px 10px', fontSize:12}} onClick={()=>load(1, pageSize, search)}>搜索</button>
+            <table>
+              <thead>
+                <tr>
+                  <th>订单号</th>
+                  <th>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      客户
+                      <div style={{position:'relative', width:160}}>
+                        <input 
+                          className="input" 
+                          style={{width:160, padding:'4px 28px 4px 8px', fontSize:13, fontWeight:'normal'}} 
+                          placeholder="搜索客户..." 
+                          value={search} 
+                          onChange={e=>setSearch(e.target.value)} 
+                          onKeyDown={e=>{if(e.key==='Enter') load(1, pageSize, search, dateFilter)}} 
+                        />
+                        {search && (
+                          <button
+                            className="btn secondary"
+                            style={{
+                              position:'absolute',
+                              right:4,
+                              top:'50%',
+                              transform:'translateY(-50%)',
+                              padding:'2px 8px',
+                              borderRadius:999,
+                              fontSize:12,
+                              lineHeight:'14px',
+                            }}
+                            onClick={()=>{ setSearch(''); load(1, pageSize, '', dateFilter); }}
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
-                    </th>
-                    <th>日期</th>
-                    <th>金额</th>
-                    <th>状态</th>
-                    <th>操作</th>
+                      <button className="btn" style={{padding:'4px 10px', fontSize:12}} onClick={()=>load(1, pageSize, search, dateFilter)}>搜索</button>
+                    </div>
+                  </th>
+                  <th>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      日期
+                      <div style={{position:'relative', width:190}}>
+                        <input
+                          className="input"
+                          type="date"
+                          style={{width:190, padding:'4px 28px 4px 8px', fontSize:13, fontWeight:'normal'}}
+                          value={dateFilter}
+                          onChange={e=>{
+                            const d = e.target.value || '';
+                            setDateFilter(d);
+                            load(1, pageSize, search, d);
+                          }}
+                        />
+                        {dateFilter && (
+                          <button
+                            className="btn secondary"
+                            style={{
+                              position:'absolute',
+                              right:4,
+                              top:'50%',
+                              transform:'translateY(-50%)',
+                              padding:'2px 8px',
+                              borderRadius:999,
+                              fontSize:12,
+                              lineHeight:'14px',
+                            }}
+                            onClick={()=>{ setDateFilter(''); load(1, pageSize, search, ''); }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </th>
+                  <th>金额</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="muted" style={{padding:20}}>暂无订单</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.map(o=> (
+                ) : (
+                  items.map(o=> (
                     <tr key={o.id}>
                       <td>{o.id}</td>
                       <td>{o.customer_name||'—'}</td>
@@ -495,24 +556,24 @@
                         <button className="btn" onClick={()=>printOrder(o.id)}>打印</button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
             <div className="spaced" style={{marginTop:10}}>
               <div className="row">
                 <span className="muted">每页</span>
-                <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps); }}>
-                  <option value={10}>10</option>
+                <select className="select" style={{width:90}} value={pageSize} onChange={e=>{ const ps=parseInt(e.target.value); load(1, ps, search, dateFilter); }}>
                   <option value={20}>20</option>
                   <option value={50}>50</option>
+                  <option value={-1}>全部</option>
                 </select>
                 <span className="muted">共 {total} 条</span>
               </div>
               <div className="row">
-                <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize)} disabled={page<=1}>上一页</button>
-                <div style={{padding:'0 8px'}}>第 {page} 页 / 共 {Math.max(1, Math.ceil(total / pageSize))} 页</div>
-                <button className="btn secondary" onClick={()=> load(Math.min(Math.ceil(total / pageSize)||1, page+1), pageSize)} disabled={page >= Math.ceil(total / pageSize)}>下一页</button>
+                <button className="btn secondary" onClick={()=> load(Math.max(1, page-1), pageSize, search, dateFilter)} disabled={page<=1 || pageSize===-1}>上一页</button>
+                <div style={{padding:'0 8px'}}>第 {pageSize===-1 ? 1 : page} 页 / 共 {totalPages} 页</div>
+                <button className="btn secondary" onClick={()=> load(Math.min(totalPages, page+1), pageSize, search, dateFilter)} disabled={pageSize===-1 || page >= totalPages}>下一页</button>
               </div>
             </div>
             {preview && (

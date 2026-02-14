@@ -68,7 +68,7 @@ def delete_customer(customer_id: int, db: Session = Depends(get_db)):
 @router.get("/page", response_model=CustomerPage)
 def list_customers_paged(
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=200),
+    page_size: int = Query(20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
     q = db.query(Customer).order_by(Customer.id.desc())

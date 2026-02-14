@@ -22,14 +22,17 @@ router = APIRouter(prefix="/orders", tags=["订单"], dependencies=[Depends(get_
 @router.get("/page", response_model=OrderPage)
 def list_orders_paged(
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=200),
+    page_size: int = Query(20, ge=1, le=200),
     q: str | None = Query(None),
+    created_date: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     query = db.query(Order).order_by(Order.id.desc())
     if q and q.strip():
         like = f"%{q.strip()}%"
         query = query.filter(func.coalesce(Order.customer_name, "").like(like))
+    if created_date and created_date.strip():
+        query = query.filter(func.strftime('%Y-%m-%d', Order.created_at) == created_date.strip())
     total = query.count()
     items = query.offset((page - 1) * page_size).limit(page_size).all()
     return {"items": items, "total": total, "page": page, "page_size": page_size}
@@ -40,6 +43,7 @@ def list_orders(
     page: int | None = Query(None, ge=1),
     page_size: int | None = Query(None, ge=1, le=200),
     q: str | None = Query(None),
+    created_date: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     query = db.query(Order).order_by(Order.id.desc())
@@ -49,6 +53,8 @@ def list_orders(
             (func.coalesce(Order.customer_name, "").like(like)) |
             (func.strftime('%Y-%m-%d %H:%M:%S', Order.created_at).like(like))
         )
+    if created_date and created_date.strip():
+        query = query.filter(func.strftime('%Y-%m-%d', Order.created_at) == created_date.strip())
     if page and page_size:
         return query.offset((page - 1) * page_size).limit(page_size).all()
     return query.all()

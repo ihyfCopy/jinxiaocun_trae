@@ -84,7 +84,7 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
 @router.get("/page", response_model=ProductPage)
 def list_products_paged(
     page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=200),
+    page_size: int = Query(20, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
     q = db.query(Product).order_by(Product.id.desc())
