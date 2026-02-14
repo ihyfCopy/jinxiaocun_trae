@@ -276,8 +276,8 @@ def list_orders_paged(
     db: Session = Depends(get_db),
 ):
     query = db.query(Order).order_by(Order.id.desc())
-    if q:
-        like = f"%{q}%"
+    if q and q.strip():
+        like = f"%{q.strip()}%"
         query = query.filter(
             (func.coalesce(Order.customer_name, "").like(like)) |
             (func.strftime('%Y-%m-%d %H:%M:%S', Order.created_at).like(like))

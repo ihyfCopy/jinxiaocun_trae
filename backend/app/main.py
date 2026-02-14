@@ -57,8 +57,14 @@ def seed_data():
                 conn.exec_driver_sql("ALTER TABLE products ADD COLUMN original_weight TEXT DEFAULT '无'")
             
             # update defaults
-            conn.exec_driver_sql("UPDATE products SET sku = '无' WHERE sku IS NULL OR sku = ''")
-            conn.exec_driver_sql("UPDATE customers SET phone = '无' WHERE phone IS NULL OR phone = ''")
+            try:
+                conn.exec_driver_sql("UPDATE products SET sku = '无' WHERE sku IS NULL OR sku = ''")
+            except Exception:
+                pass
+            try:
+                conn.exec_driver_sql("UPDATE customers SET phone = '无' WHERE phone IS NULL OR phone = ''")
+            except Exception:
+                pass
             
         # seed admin user
         if not db.query(User).filter(User.username == "admin").first():
